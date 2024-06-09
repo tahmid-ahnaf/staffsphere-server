@@ -65,6 +65,28 @@ async function run() {
       }
       next();
     }
+    // use verify employee after verifyToken
+    const verifyEmployee = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const isEmployee = user?.role === 'employee';
+      if (!isEmployee) {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      next();
+    }
+    // use verify hr after verifyToken
+    const verifyHr = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const isHr = user?.role === 'hr';
+      if (!isHr) {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      next();
+    }
 
     // users related api
     app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
@@ -152,7 +174,7 @@ async function run() {
     })
 
 
-    app.post("/tasks", verifyToken, async (req, res) => {
+    app.post("/tasks", verifyToken,verifyEmployee, async (req, res) => {
       const newQuery = req.body;
       const result = await taskCollection.insertOne(newQuery);
       res.send(result);
@@ -161,7 +183,10 @@ async function run() {
     app.get('/tasks', async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
-      const result = await taskCollection.find(query).toArray();
+      const options = {
+        sort: { date: -1 }
+      };
+      const result = await taskCollection.find(query,options).toArray();
       res.send(result);
     });
 
