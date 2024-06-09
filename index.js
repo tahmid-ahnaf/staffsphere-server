@@ -29,6 +29,8 @@ async function run() {
 
     const userCollection = client.db("staffsphereDB").collection("users");
 
+    const taskCollection = client.db("staffsphereDB").collection("tasks");
+
     // jwt related api
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -102,6 +104,23 @@ async function run() {
       res.send({ employee });
     })
 
+
+    app.get('/users/hr/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
+
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      let hr = false;
+      if (user) {
+        hr = user?.role === 'hr';
+      }
+      res.send({ hr });
+    })
+
     app.post('/users', async (req, res) => {
       const user = req.body;
       const query = { email: user.email }
@@ -131,6 +150,23 @@ async function run() {
       const result = await userCollection.deleteOne(query);
       res.send(result);
     })
+
+
+    app.post("/tasks", verifyToken, async (req, res) => {
+      const newQuery = req.body;
+      const result = await taskCollection.insertOne(newQuery);
+      res.send(result);
+    });
+
+    app.get('/tasks', async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const result = await taskCollection.find(query).toArray();
+      res.send(result);
+    });
+
+
+
 
 
 
