@@ -11,7 +11,7 @@ app.use(express.json());
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.swu9d.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.buwy59t.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -27,7 +27,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    const userCollection = client.db("staffsphere").collection("users");
+    const userCollection = client.db("staffsphereDB").collection("users");
 
     // jwt related api
     app.post('/jwt', async (req, res) => {
@@ -86,10 +86,24 @@ async function run() {
       res.send({ admin });
     })
 
+    app.get('/users/employee/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
+
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      let employee = false;
+      if (user) {
+        employee = user?.role === 'employee';
+      }
+      res.send({ employee });
+    })
+
     app.post('/users', async (req, res) => {
       const user = req.body;
-      // insert email if user doesnt exists: 
-      // you can do this many ways (1. email unique, 2. upsert 3. simple checking)
       const query = { email: user.email }
       const existingUser = await userCollection.findOne(query);
       if (existingUser) {
