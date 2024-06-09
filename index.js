@@ -190,6 +190,27 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/employees', verifyToken, verifyHr, async (req, res) => {
+      
+      const query = { role: "employee" };
+      const result = await userCollection.find(query).toArray();
+      res.send(result);
+    });
+
+
+    app.patch('/employees/verify', verifyToken, verifyHr, async (req, res) => {
+      const email = req.query.email;
+      const isVerified = req.query.isVerified;
+      const filter = { email: email };
+      const updatedDoc = {
+        $set: {
+          verified: isVerified,
+        }
+      }
+      const result = await userCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    })
+
 
 
 
