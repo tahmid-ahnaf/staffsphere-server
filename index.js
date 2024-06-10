@@ -3,6 +3,8 @@ const app = express();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config()
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -30,7 +32,7 @@ async function run() {
     const userCollection = client.db("staffsphereDB").collection("users");
 
     const taskCollection = client.db("staffsphereDB").collection("tasks");
-
+    const paymentCollection = client.db("staffsphereDB").collection("payments");
     // jwt related api
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -255,6 +257,32 @@ async function run() {
       res.send(result);
     });
 
+
+    // payment intent
+    app.post('/create-payment-intent', async (req, res) => {
+      const { salary } = req.body;
+      const amount = parseInt(salary * 100);
+      console.log(amount, 'amount inside the intent')
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    });
+
+    app.post('/payments', async (req, res) => {
+      const payment = req.body;
+      const paymentResult = await paymentCollection.insertOne(payment);
+
+      console.log('payment info', payment);
+
+      res.send({ paymentResult });
+    })
 
 
 
