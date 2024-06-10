@@ -224,6 +224,30 @@ async function run() {
     })
 
 
+    app.patch('/updateSalary', verifyToken, verifyAdmin, async (req, res) => {
+      const email = req.query.email;
+      const newSalary = req.query.newSalary;
+      console.log(newSalary);
+
+      const filter = { email: email };
+      const user = await userCollection.findOne(filter);
+      console.log(user.salary, newSalary);
+      let result;
+      if(user.salary <= newSalary)
+        {
+          const updatedDoc = {
+            $set: {
+              salary: newSalary,
+          }
+        };
+        result = await userCollection.updateOne(filter, updatedDoc);
+      }
+      
+      
+      res.send(result);
+    });
+
+
     app.get('/verifiedList', verifyToken, verifyAdmin, async (req, res) => {
       
       const query = { role: { $in: ["employee", "hr"] }, verified:"true" };
